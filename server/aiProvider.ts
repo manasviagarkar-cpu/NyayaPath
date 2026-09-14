@@ -335,6 +335,52 @@ export function generateMockRoadmap(
 }
 
 /**
+ * Check if Live AI is configured and enabled
+ */
+export function isLiveAiConfigured(): boolean {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const provider = process.env.AI_PROVIDER || 'mock';
+  const forceMock = process.env.MOCK_MODE === 'true' || provider === 'mock' || !apiKey || apiKey.trim().length < 10;
+  return !forceMock;
+}
+
+/**
+ * Strips markdown code blocks and normalizes JSON candidate output
+ */
+function cleanJsonResponse(rawText: string): any {
+  let cleaned = rawText.trim();
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  }
+
+  const parsed = JSON.parse(cleaned);
+
+  // Guarantee schema compliance on immediate steps
+  if (Array.isArray(parsed.immediate_steps) && parsed.immediate_steps.length > 3) {
+    parsed.immediate_steps = parsed.immediate_steps.slice(0, 3);
+  }
+
+  // Ensure URLs are well-formed
+  if (Array.isArray(parsed.where_to_go)) {
+    parsed.where_to_go = parsed.where_to_go.map((item: any) => ({
+      ...item,
+      url: (item.url || '').trim().startsWith('http') ? item.url.trim() : `https://${(item.url || 'ecourts.gov.in').trim()}`
+    }));
+  }
+
+  if (Array.isArray(parsed.sources)) {
+    parsed.sources = parsed.sources.map((item: any) => ({
+      ...item,
+      url: (item.url || '').trim().startsWith('http') ? item.url.trim() : `https://${(item.url || 'nalsa.gov.in').trim()}`
+    }));
+  }
+
+  return parsed;
+}
+
+/**
  * AI Provider abstraction using Gemini API with retry and fallback
  */
 export async function generateLegalRoadmap(
@@ -343,10 +389,8 @@ export async function generateLegalRoadmap(
   documentText?: string | null
 ): Promise<RoadmapResponse> {
   const apiKey = process.env.GEMINI_API_KEY;
-  const provider = process.env.AI_PROVIDER || 'mock';
-  const forceMock = process.env.MOCK_MODE === 'true' || provider === 'mock' || !apiKey;
 
-  if (forceMock) {
+  if (!isLiveAiConfigured()) {
     return generateMockRoadmap(input, sources, documentText);
   }
 
@@ -379,9 +423,9 @@ Generate the structured JSON roadmap following all safety rules. Remember:
 - Do not invent cases, statutes, fees, addresses, or phone numbers.
 `;
 
-  // Helper to call Gemini API
-  async function callGemini(retryInstruction?: string): Promise<string> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  // Helper to call Gemini API with valid models (gemini-2.0-flash / gemini-1.5-flash)
+  async function callGemini(retryInstruction?: string, modelName: string = process.env.GEMINI_MODEL || 'gemini-1.5-flash'): Promise<string> {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
       method: 'POST',
@@ -404,6 +448,11 @@ Generate the structured JSON roadmap following all safety rules. Remember:
 
     if (!response.status || response.status < 200 || response.status >= 300) {
       const errText = await response.text();
+      // If 2.0-flash fails with 404, attempt fallback to 1.5-flash
+      if (response.status === 404 && modelName !== 'gemini-1.5-flash') {
+        console.warn(`Model ${modelName} returned 404, attempting fallback to gemini-1.5-flash`);
+        return callGemini(retryInstruction, 'gemini-1.5-flash');
+      }
       throw new Error(`AI Provider API responded with status ${response.status}: ${errText.slice(0, 200)}`);
     }
 
@@ -417,15 +466,15 @@ Generate the structured JSON roadmap following all safety rules. Remember:
 
   try {
     const textOutput = await callGemini();
-    const parsed = JSON.parse(textOutput);
-    const validated = RoadmapResponseSchema.parse(parsed);
+    const cleaned = cleanJsonResponse(textOutput);
+    const validated = RoadmapResponseSchema.parse(cleaned);
     return validated;
   } catch (firstErr: any) {
     // Retry once with correction instruction
     try {
       const retryText = await callGemini('Your previous response did not match the strict JSON schema. Ensure immediate_steps has at most 3 items and all required fields are present.');
-      const parsedRetry = JSON.parse(retryText);
-      const validatedRetry = RoadmapResponseSchema.parse(parsedRetry);
+      const cleanedRetry = cleanJsonResponse(retryText);
+      const validatedRetry = RoadmapResponseSchema.parse(cleanedRetry);
       return validatedRetry;
     } catch (secondErr: any) {
       // Graceful fallback to verified deterministic mock rather than showing broken UI

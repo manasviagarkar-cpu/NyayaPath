@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, AlertTriangle, ShieldCheck, MapPin, Calendar, FileQuestion, Clock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AlertTriangle, ShieldCheck, MapPin, Calendar, FileQuestion, Clock, Sparkles } from 'lucide-react';
 import { QuestionnaireAnswers, WorkflowCategory, UrgentRiskFactors } from '../types.js';
 import { UrgentAlertBanner } from './UrgentAlertBanner.js';
 
 interface QuestionnaireFormProps {
   initialWorkflow: WorkflowCategory;
+  initialAnswers?: Partial<QuestionnaireAnswers> | null;
   onSubmit: (answers: QuestionnaireAnswers) => void;
   onBack: () => void;
 }
@@ -22,21 +23,36 @@ const INDIAN_STATES_AND_UTS = [
 
 export const QuestionnaireForm: React.FC<QuestionnaireFormProps> = ({
   initialWorkflow,
+  initialAnswers,
   onSubmit,
   onBack
 }) => {
-  const [workflow, setWorkflow] = useState<WorkflowCategory>(initialWorkflow);
-  const [state, setState] = useState<string>('Delhi (NCT)');
-  const [district, setDistrict] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
-  const [dateOrRange, setDateOrRange] = useState<string>('');
-  const [hasWrittenDocument, setHasWrittenDocument] = useState<'yes' | 'no' | 'unsure'>('yes');
-  const [documentTypeDescription, setDocumentTypeDescription] = useState<string>('');
-  const [hasReceivedDeadline, setHasReceivedDeadline] = useState<'yes' | 'no' | 'unsure'>('no');
-  const [deadlineDate, setDeadlineDate] = useState<string>('');
-  const [hasUrgentRisk, setHasUrgentRisk] = useState<boolean>(false);
-  const [urgentFactors, setUrgentFactors] = useState<UrgentRiskFactors>({});
+  const [workflow, setWorkflow] = useState<WorkflowCategory>(initialAnswers?.workflow || initialWorkflow);
+  const [state, setState] = useState<string>(initialAnswers?.state || 'Delhi (NCT)');
+  const [district, setDistrict] = useState<string>(initialAnswers?.district || '');
+  const [description, setDescription] = useState<string>(initialAnswers?.description || '');
+  const [dateOrRange, setDateOrRange] = useState<string>(initialAnswers?.dateOrRange || '');
+  const [hasWrittenDocument, setHasWrittenDocument] = useState<'yes' | 'no' | 'unsure'>(initialAnswers?.hasWrittenDocument || 'yes');
+  const [documentTypeDescription, setDocumentTypeDescription] = useState<string>(initialAnswers?.documentTypeDescription || '');
+  const [hasReceivedDeadline, setHasReceivedDeadline] = useState<'yes' | 'no' | 'unsure'>(initialAnswers?.hasReceivedDeadline || 'no');
+  const [deadlineDate, setDeadlineDate] = useState<string>(initialAnswers?.deadlineDate || '');
+  const [hasUrgentRisk, setHasUrgentRisk] = useState<boolean>(initialAnswers?.hasUrgentRisk || false);
+  const [urgentFactors, setUrgentFactors] = useState<UrgentRiskFactors>(initialAnswers?.urgentRiskFactors || {});
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  const handleLoadExample = () => {
+    setWorkflow('rental');
+    setState('Karnataka');
+    setDistrict('Bengaluru Urban');
+    setDescription('My landlord is withholding my security deposit after I moved out.');
+    setDateOrRange('Vacated 31st August; 11-month lease');
+    setHasWrittenDocument('yes');
+    setDocumentTypeDescription('Registered 11-Month Rental Agreement');
+    setHasReceivedDeadline('no');
+    setHasUrgentRisk(false);
+    setUrgentFactors({});
+    setValidationError(null);
+  };
 
   const handleUrgentFactorToggle = (key: keyof UrgentRiskFactors) => {
     const updated = { ...urgentFactors, [key]: !urgentFactors[key] };
@@ -160,9 +176,21 @@ export const QuestionnaireForm: React.FC<QuestionnaireFormProps> = ({
 
         {/* Problem Description */}
         <div className="form-group">
-          <label className="form-label" htmlFor="description-input">
-            What happened? Explain in your own words *
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <label className="form-label" htmlFor="description-input" style={{ margin: 0 }}>
+              What happened? Explain in your own words *
+            </label>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={handleLoadExample}
+              style={{ fontSize: '0.82rem', padding: '0.2rem 0.65rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', borderColor: 'var(--color-primary-light)' }}
+              title="Click to automatically load sample deposit dispute"
+            >
+              <Sparkles size={13} color="var(--color-primary-light)" />
+              <span>Try an example</span>
+            </button>
+          </div>
           <textarea
             id="description-input"
             className="form-textarea"

@@ -202,7 +202,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       )}
 
       {/* Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <button
           type="button"
           className="btn btn-secondary"
@@ -210,27 +210,66 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           disabled={isLoading}
         >
           <ArrowLeft size={16} />
-          Back
+          Back to Questions
         </button>
 
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => onGenerate(uploadMeta?.id)}
-          disabled={isLoading || isUploading}
-        >
-          {isLoading ? (
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {uploadMeta ? (
             <>
-              <Loader2 size={16} className="spin" />
-              <span>Generating Your Roadmap...</span>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => onGenerate(undefined)}
+                disabled={isLoading || isUploading}
+                title="Generate roadmap using only questionnaire answers"
+              >
+                Skip Document & Generate
+              </button>
+
+              <button
+                id="btn-generate-roadmap"
+                type="button"
+                className="btn btn-primary"
+                onClick={() => onGenerate(uploadMeta.id)}
+                disabled={isLoading || isUploading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={16} className="spin" />
+                    <span>Generating Your Roadmap...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Generate Roadmap (With Document)</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
             </>
           ) : (
             <>
-              <span>{uploadMeta ? 'Generate Roadmap with Document' : 'Generate Roadmap (Without Document)'}</span>
-              <ArrowRight size={16} />
+              <button
+                id="btn-skip-document"
+                type="button"
+                className="btn btn-primary"
+                onClick={() => onGenerate(undefined)}
+                disabled={isLoading || isUploading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={16} className="spin" />
+                    <span>Generating Your Roadmap...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Skip & Generate Roadmap</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
             </>
           )}
-        </button>
+        </div>
       </div>
     </div>
   );

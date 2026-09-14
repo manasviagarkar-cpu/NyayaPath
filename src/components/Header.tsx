@@ -33,8 +33,11 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="nav-actions">
           {isMockMode && (
-            <span className="badge-demo" title="Deterministic mock mode active for reliable preview without live API key">
-              Demo Mode
+            <span 
+              className="badge-demo" 
+              title="Interactive prototype with simulated roadmap generation."
+            >
+              Interactive Prototype (Simulated)
             </span>
           )}
 

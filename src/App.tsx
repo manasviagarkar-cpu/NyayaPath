@@ -12,6 +12,7 @@ export const App: React.FC = () => {
   const [currentStage, setCurrentStage] = useState<AppStage>('landing');
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowCategory>('rental');
   const [answers, setAnswers] = useState<QuestionnaireAnswers | null>(null);
+  const [prefilledAnswers, setPrefilledAnswers] = useState<Partial<QuestionnaireAnswers> | null>(null);
   const [documentId, setDocumentId] = useState<string | undefined>(undefined);
   const [roadmap, setRoadmap] = useState<RoadmapResponse | null>(null);
 
@@ -34,6 +35,24 @@ export const App: React.FC = () => {
 
   const handleSelectWorkflow = (workflow: WorkflowCategory) => {
     setSelectedWorkflow(workflow);
+    setPrefilledAnswers(null);
+    setCurrentStage('questionnaire');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSelectExample = () => {
+    setSelectedWorkflow('rental');
+    setPrefilledAnswers({
+      workflow: 'rental',
+      state: 'Karnataka',
+      district: 'Bengaluru Urban',
+      description: 'My landlord is withholding my security deposit after I moved out.',
+      dateOrRange: 'Vacated premises on 31st August; 11-month lease',
+      hasWrittenDocument: 'yes',
+      documentTypeDescription: 'Registered 11-Month Rental Agreement',
+      hasReceivedDeadline: 'no',
+      hasUrgentRisk: false
+    });
     setCurrentStage('questionnaire');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -67,10 +86,14 @@ export const App: React.FC = () => {
       }
 
       const data = await res.json();
+      if (!data.roadmap) {
+        throw new Error('Server returned an empty roadmap response.');
+      }
       setRoadmap(data.roadmap);
       setCurrentStage('roadmap');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
+      console.error('Roadmap generation error:', err);
       setErrorMsg(err.message || 'An error occurred while generating your roadmap. Please retry.');
     } finally {
       setIsLoading(false);
@@ -93,6 +116,7 @@ export const App: React.FC = () => {
       handleDeleteDocument();
     }
     setAnswers(null);
+    setPrefilledAnswers(null);
     setDocumentId(undefined);
     setRoadmap(null);
     setErrorMsg(null);
@@ -131,6 +155,7 @@ export const App: React.FC = () => {
           <LandingHero
             onSelectWorkflow={handleSelectWorkflow}
             onOpenSources={() => setIsSourcesModalOpen(true)}
+            onSelectExample={handleSelectExample}
           />
         )}
 
@@ -138,6 +163,7 @@ export const App: React.FC = () => {
         {currentStage === 'questionnaire' && (
           <QuestionnaireForm
             initialWorkflow={selectedWorkflow}
+            initialAnswers={prefilledAnswers}
             onSubmit={handleQuestionnaireSubmit}
             onBack={() => setCurrentStage('landing')}
           />
@@ -158,6 +184,7 @@ export const App: React.FC = () => {
             roadmap={roadmap}
             answers={answers}
             documentId={documentId}
+            isMockMode={isMockMode}
             onReset={handleReset}
             onDeleteDocument={handleDeleteDocument}
             onOpenSources={() => setIsSourcesModalOpen(true)}

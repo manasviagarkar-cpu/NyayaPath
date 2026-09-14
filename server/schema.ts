@@ -24,7 +24,7 @@ export const QuestionnaireAnswersSchema = z.object({
   documentTypeDescription: z.string().optional(),
   hasReceivedDeadline: z.enum(['yes', 'no', 'unsure']).optional(),
   deadlineDate: z.string().optional(),
-  hasUrgentRisk: z.boolean(),
+  hasUrgentRisk: z.boolean().default(false),
   urgentRiskFactors: UrgentRiskFactorsSchema.optional(),
   specificDetails: z.record(z.string()).optional()
 });
@@ -38,14 +38,14 @@ export const DocumentChecklistItemSchema = z.object({
 export const WhereToGoItemSchema = z.object({
   name: z.string().min(1),
   reason: z.string().min(1),
-  url: z.string().url(),
+  url: z.string().min(1),
   jurisdiction: z.string().min(1),
   access_mode: z.enum(['Online', 'Offline', 'Online & In-person']).optional()
 });
 
 export const RoadmapSourceItemSchema = z.object({
   title: z.string().min(1),
-  url: z.string().url(),
+  url: z.string().min(1),
   authority: z.string().min(1),
   relevance: z.string().min(1)
 });

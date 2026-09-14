@@ -22,6 +22,7 @@ interface RoadmapViewProps {
   roadmap: RoadmapResponse;
   answers: QuestionnaireAnswers;
   documentId?: string;
+  isMockMode?: boolean;
   onReset: () => void;
   onDeleteDocument: () => Promise<void>;
   onOpenSources: () => void;
@@ -31,6 +32,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
   roadmap,
   answers,
   documentId,
+  isMockMode,
   onReset,
   onDeleteDocument,
   onOpenSources
@@ -44,6 +46,7 @@ NYAYAPATH LEGAL ROADMAP
 Problem Category: ${answers.workflow.toUpperCase()}
 Jurisdiction: ${answers.state}${answers.district ? ` (${answers.district})` : ''}
 Urgency Level: ${roadmap.urgency_level.toUpperCase()}
+Grounding: This roadmap is based on the user's answers, uploaded document, and approved official sources.
 
 1. SITUATION SUMMARY:
 ${roadmap.situation_summary}
@@ -96,11 +99,12 @@ ${roadmap.limitations.join('\n')}
       <div className="print-only-header">
         <h1>NyayaPath Legal Roadmap</h1>
         <p>Jurisdiction: {answers.state} {answers.district ? `(${answers.district})` : ''} | Generated: {new Date().toLocaleDateString('en-IN')}</p>
+        <p style={{ fontSize: '0.82rem', color: '#1e3a8a', fontWeight: 600 }}>This roadmap is based on the user’s answers{documentId ? ', uploaded document,' : ''} and approved official sources.</p>
         <p style={{ fontSize: '0.8rem', color: '#555' }}>General legal information only. Not a formal legal opinion or substitute for a certified advocate.</p>
       </div>
 
       {/* Action Bar (Top) */}
-      <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem', background: '#ffffff', padding: '1rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', boxShadow: var_shadow_sm }}>
+      <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', background: '#ffffff', padding: '1rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', boxShadow: var_shadow_sm }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Jurisdiction:</span>
           <strong>{answers.state}</strong>
@@ -126,6 +130,26 @@ ${roadmap.limitations.join('\n')}
             <RotateCcw size={15} />
             <span>Start Over</span>
           </button>
+        </div>
+      </div>
+
+      {/* Verified Grounding / Source Attribution Banner */}
+      <div className="source-grounding-banner no-print" style={{ background: '#f0f4ff', border: '1px solid #c7d2fe', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <ShieldCheck size={24} color="var(--color-primary-light)" style={{ flexShrink: 0 }} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.98rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span>Verified Source Grounding</span>
+              {roadmap.sources && roadmap.sources.length > 0 && (
+                <span style={{ background: '#e0e7ff', color: '#3730a3', fontSize: '0.78rem', padding: '0.15rem 0.55rem', borderRadius: 'var(--radius-full)', fontWeight: 600 }}>
+                  {roadmap.sources.length} Official Authorities Linked
+                </span>
+              )}
+            </div>
+            <p style={{ fontSize: '0.92rem', color: 'var(--color-text-main)', margin: '0.2rem 0 0 0', lineHeight: 1.5 }}>
+              This roadmap is based on the user’s answers{documentId ? ', uploaded document,' : ''} and approved official sources.
+            </p>
+          </div>
         </div>
       </div>
 

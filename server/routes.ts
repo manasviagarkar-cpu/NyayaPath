@@ -3,7 +3,7 @@ import multer from 'multer';
 import { QuestionnaireAnswersSchema } from './schema.js';
 import { CURATED_LEGAL_SOURCES, getSourcesForWorkflow } from './sources.js';
 import { processUploadedFile, getDocumentText, deleteDocument } from './documentService.js';
-import { generateLegalRoadmap } from './aiProvider.js';
+import { generateLegalRoadmap, generateMockRoadmap, isLiveAiConfigured } from './aiProvider.js';
 
 export const apiRouter = Router();
 
@@ -23,7 +23,7 @@ const upload = multer({
     const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
     const fileExt = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf('.'));
 
-    if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(fileExt)) {
+    if (allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(fileExt)) {
       cb(null, true);
     } else {
       cb(new Error('Invalid file type. Only PDF, JPG, JPEG, and PNG documents up to 5MB are accepted.'));
@@ -33,11 +33,15 @@ const upload = multer({
 
 // 1. Health check
 apiRouter.get('/health', (_req: Request, res: Response) => {
+  const liveAi = isLiveAiConfigured();
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'NyayaPath API',
-    mode: process.env.MOCK_MODE === 'true' || !process.env.GEMINI_API_KEY ? 'mock' : 'live_ai'
+    mode: liveAi ? 'live_ai' : 'mock',
+    description: liveAi
+      ? 'Live AI roadmap generation connected via Google Gemini'
+      : 'Interactive prototype with simulated roadmap generation.'
   });
 });
 
@@ -54,29 +58,36 @@ apiRouter.get('/sources', (req: Request, res: Response) => {
   }
 });
 
-// 3. Document upload (optional)
-apiRouter.post('/upload', upload.single('document'), async (req: Request, res: Response): Promise<void> => {
-  try {
-    if (!req.file) {
-      res.status(400).json({ error: 'No file uploaded' });
+// 3. Document upload (optional) with clean error handling
+apiRouter.post('/upload', (req: Request, res: Response): void => {
+  upload.single('document')(req, res, async (err: any) => {
+    if (err) {
+      res.status(400).json({ error: err.message || 'File upload failed. Supported formats: PDF, JPG, JPEG, PNG (Max 5MB).' });
       return;
     }
 
-    const meta = await processUploadedFile(req.file);
-    res.json({
-      success: true,
-      document: {
-        id: meta.id,
-        originalName: meta.originalName,
-        sizeBytes: meta.sizeBytes,
-        mimeType: meta.mimeType,
-        hasExtractedText: meta.hasExtractedText,
-        preview: meta.extractedTextPreview
+    try {
+      if (!req.file) {
+        res.status(400).json({ error: 'No file uploaded' });
+        return;
       }
-    });
-  } catch (err: any) {
-    res.status(400).json({ error: err.message || 'File upload failed' });
-  }
+
+      const meta = await processUploadedFile(req.file);
+      res.json({
+        success: true,
+        document: {
+          id: meta.id,
+          originalName: meta.originalName,
+          sizeBytes: meta.sizeBytes,
+          mimeType: meta.mimeType,
+          hasExtractedText: meta.hasExtractedText,
+          preview: meta.extractedTextPreview
+        }
+      });
+    } catch (procErr: any) {
+      res.status(400).json({ error: procErr.message || 'Error processing uploaded document.' });
+    }
+  });
 });
 
 // 4. Document deletion
@@ -100,7 +111,7 @@ apiRouter.post('/roadmap/generate', async (req: Request, res: Response): Promise
       return;
     }
 
-    // Validate questionnaire input
+    // Validate questionnaire input with lenient schema
     const validationResult = QuestionnaireAnswersSchema.safeParse(answers);
     if (!validationResult.success) {
       res.status(400).json({
@@ -121,8 +132,14 @@ apiRouter.post('/roadmap/generate', async (req: Request, res: Response): Promise
       documentText = getDocumentText(documentId);
     }
 
-    // Generate structured roadmap
-    const roadmap = await generateLegalRoadmap(validatedAnswers, relevantSources, documentText);
+    // Generate structured roadmap with infallible fallback
+    let roadmap;
+    try {
+      roadmap = await generateLegalRoadmap(validatedAnswers, relevantSources, documentText);
+    } catch (genErr: any) {
+      console.warn('generateLegalRoadmap error, falling back to mock:', genErr.message);
+      roadmap = generateMockRoadmap(validatedAnswers, relevantSources, documentText);
+    }
 
     res.json({
       success: true,
@@ -131,13 +148,39 @@ apiRouter.post('/roadmap/generate', async (req: Request, res: Response): Promise
         workflow: validatedAnswers.workflow,
         jurisdiction: validatedAnswers.state,
         hasDocumentContext: !!documentText,
+        isSimulated: !isLiveAiConfigured(),
         timestamp: new Date().toISOString()
       }
     });
   } catch (err: any) {
-    console.error('Error generating roadmap:', err.message);
-    res.status(500).json({
-      error: 'Unable to generate legal roadmap at this time. Please try again or consult official legal aid.'
-    });
+    console.error('Unexpected error in /roadmap/generate:', err.message);
+    // Even in catastrophic catch, return a fallback mock roadmap if answers can be salvaged
+    try {
+      const fallbackWf = (req.body?.answers?.workflow as any) || 'rental';
+      const fallbackState = req.body?.answers?.state || 'Delhi (NCT)';
+      const sources = getSourcesForWorkflow(fallbackWf, fallbackState);
+      const fallbackAnswers = {
+        workflow: fallbackWf,
+        state: fallbackState,
+        description: req.body?.answers?.description || 'Legal matter inquiry',
+        hasUrgentRisk: false
+      };
+      const fallbackRoadmap = generateMockRoadmap(fallbackAnswers as any, sources);
+      res.json({
+        success: true,
+        roadmap: fallbackRoadmap,
+        meta: {
+          workflow: fallbackWf,
+          jurisdiction: fallbackState,
+          hasDocumentContext: false,
+          isSimulated: true,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch {
+      res.status(500).json({
+        error: 'Unable to generate legal roadmap at this time. Please try again or consult official legal aid.'
+      });
+    }
   }
 });

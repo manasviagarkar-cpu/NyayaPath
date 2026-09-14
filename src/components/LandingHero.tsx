@@ -1,15 +1,18 @@
 import React from 'react';
 import { Home, Briefcase, Scale, HelpCircle, ArrowRight, ShieldCheck, CheckCircle2, FileText, Compass } from 'lucide-react';
 import { WorkflowCategory } from '../types.js';
+import { DemoExampleButton } from './DemoExampleButton.js';
 
 interface LandingHeroProps {
   onSelectWorkflow: (category: WorkflowCategory) => void;
   onOpenSources: () => void;
+  onSelectExample: () => void;
 }
 
 export const LandingHero: React.FC<LandingHeroProps> = ({
   onSelectWorkflow,
-  onOpenSources
+  onOpenSources,
+  onSelectExample
 }) => {
   return (
     <div>
@@ -33,12 +36,24 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <span>Create My Roadmap</span>
             <ArrowRight size={18} />
           </button>
+          <DemoExampleButton onSelectExample={onSelectExample} />
           <button 
             type="button" 
             className="btn btn-secondary"
             onClick={onOpenSources}
           >
             <span>View Verified Sources</span>
+          </button>
+        </div>
+
+        <div style={{ marginTop: '-0.3rem', marginBottom: '1.25rem', fontSize: '0.88rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
+          <span>Demo scenario:</span>
+          <button 
+            type="button" 
+            onClick={onSelectExample}
+            style={{ background: 'none', border: 'none', color: 'var(--color-primary-light)', textDecoration: 'underline', cursor: 'pointer', fontWeight: 600, fontSize: 'inherit', padding: 0 }}
+          >
+            “My landlord is withholding my security deposit after I moved out.”
           </button>
         </div>
 
