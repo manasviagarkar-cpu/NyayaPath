@@ -379,6 +379,11 @@ button, input, select, textarea {
   background: #fafbff;
 }
 
+.workflow-card:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
 .workflow-icon {
   width: 48px;
   height: 48px;
