@@ -124,26 +124,58 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const [sourceTriggerEl, setSourceTriggerEl] = useState<HTMLElement | null>(null);
+
+  const handleOpenSources = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    if (e && e.currentTarget instanceof HTMLElement) {
+      setSourceTriggerEl(e.currentTarget);
+    } else if (document.activeElement instanceof HTMLElement) {
+      setSourceTriggerEl(document.activeElement);
+    }
+    setIsSourcesModalOpen(true);
+  };
+
   return (
     <div className="app-container">
+      {/* WCAG 2.4.1: Bypass Blocks / Skip to Main Content */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       <Header
         currentStage={currentStage}
         onNavigate={(stage) => {
           if (stage === 'landing') handleReset();
           else setCurrentStage(stage);
         }}
-        onOpenSources={() => setIsSourcesModalOpen(true)}
+        onOpenSources={handleOpenSources}
         isMockMode={isMockMode}
       />
 
-      <main className="main-content">
+      <main id="main-content" className="main-content" tabIndex={-1}>
         {errorMsg && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div 
+            role="alert" 
+            aria-live="assertive"
+            style={{ 
+              background: '#fef2f2', 
+              border: '1.5px solid #fecaca', 
+              color: '#991b1b', 
+              padding: '1rem', 
+              borderRadius: 'var(--radius-md)', 
+              marginBottom: '1.5rem', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              gap: '1rem'
+            }}
+          >
             <span>{errorMsg}</span>
             <button 
               type="button" 
               className="btn btn-secondary btn-sm"
               onClick={() => setErrorMsg(null)}
+              aria-label="Dismiss error message"
             >
               Dismiss
             </button>
@@ -154,7 +186,7 @@ export const App: React.FC = () => {
         {currentStage === 'landing' && (
           <LandingHero
             onSelectWorkflow={handleSelectWorkflow}
-            onOpenSources={() => setIsSourcesModalOpen(true)}
+            onOpenSources={handleOpenSources}
             onSelectExample={handleSelectExample}
           />
         )}
@@ -187,16 +219,17 @@ export const App: React.FC = () => {
             isMockMode={isMockMode}
             onReset={handleReset}
             onDeleteDocument={handleDeleteDocument}
-            onOpenSources={() => setIsSourcesModalOpen(true)}
+            onOpenSources={handleOpenSources}
           />
         )}
       </main>
 
-      <Footer onOpenSources={() => setIsSourcesModalOpen(true)} />
+      <Footer onOpenSources={handleOpenSources} />
 
       <SourcesModal
         isOpen={isSourcesModalOpen}
         onClose={() => setIsSourcesModalOpen(false)}
+        triggerElement={sourceTriggerEl}
       />
     </div>
   );

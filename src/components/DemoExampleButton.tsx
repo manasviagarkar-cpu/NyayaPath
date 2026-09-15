@@ -18,8 +18,9 @@ export const DemoExampleButton: React.FC<DemoExampleButtonProps> = ({ onSelectEx
     }}
     onClick={onSelectExample}
     title="Automatically load sample landlord dispute for fast evaluation"
+    aria-label="Try an example: sample rental security deposit dispute"
   >
-    <Sparkles size={16} color="var(--color-primary-light)" />
+    <Sparkles size={16} color="var(--color-primary-light)" aria-hidden="true" />
     <span>Try an example</span>
   </button>
 );

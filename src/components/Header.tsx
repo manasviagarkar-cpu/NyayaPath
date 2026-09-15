@@ -18,20 +18,19 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="site-header">
       <div className="header-inner">
-        <div 
+        <button 
+          type="button"
           className="logo-brand" 
           onClick={() => onNavigate('landing')} 
-          role="button" 
-          tabIndex={0}
-          title="NyayaPath Home"
+          aria-label="NyayaPath Home - Go to start page"
         >
-          <div className="logo-icon-wrap">
+          <div className="logo-icon-wrap" aria-hidden="true">
             <Compass size={22} />
           </div>
           <span>NyayaPath</span>
-        </div>
+        </button>
 
-        <div className="nav-actions">
+        <nav className="nav-actions" aria-label="Main Navigation">
           {isMockMode && (
             <span 
               className="badge-demo" 
@@ -47,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenSources}
             title="View verified Indian legal sources"
           >
-            <BookOpen size={16} />
+            <BookOpen size={16} aria-hidden="true" />
             <span>Verified Sources</span>
           </button>
 
@@ -56,11 +55,12 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               className="btn btn-outline-primary btn-sm"
               onClick={() => onNavigate('landing')}
+              aria-label="Start over and reset current questionnaire"
             >
               Start Over
             </button>
           )}
-        </div>
+        </nav>
       </div>
     </header>
   );
