@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, BookOpen, ShieldCheck } from 'lucide-react';
+import { Compass, BookOpen } from 'lucide-react';
 import { AppStage } from '../types.js';
 
 interface HeaderProps {

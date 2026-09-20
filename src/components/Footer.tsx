@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldAlert, BookOpen, ExternalLink } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 interface FooterProps {
   onOpenSources: () => void;

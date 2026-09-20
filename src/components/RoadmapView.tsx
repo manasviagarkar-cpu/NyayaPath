@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { 
-  CheckCircle2, 
-  Copy, 
-  Printer, 
-  RotateCcw, 
-  Trash2, 
-  ExternalLink, 
-  ShieldAlert, 
-  Compass, 
-  ListChecks, 
-  Building2, 
-  HelpCircle, 
-  FileText, 
+import {
+  CheckCircle2,
+  Copy,
+  Printer,
+  RotateCcw,
+  Trash2,
+  ExternalLink,
+  ShieldAlert,
+  ShieldCheck,
+  Compass,
+  ListChecks,
+  Building2,
+  HelpCircle,
+  FileText,
   AlertCircle,
   Check
 } from 'lucide-react';
@@ -32,7 +33,6 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
   roadmap,
   answers,
   documentId,
-  isMockMode,
   onReset,
   onDeleteDocument,
   onOpenSources
@@ -55,22 +55,22 @@ ${roadmap.situation_summary}
 ${roadmap.immediate_steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
 
 3. IMPORTANT MISSING INFORMATION:
-${roadmap.missing_information.map(info => `• ${info}`).join('\n')}
+${roadmap.missing_information.map(info => `â€¢ ${info}`).join('\n')}
 
 4. POSSIBLE ISSUE CATEGORIES:
-${roadmap.possible_issue_categories.map(cat => `• ${cat}`).join('\n')}
+${roadmap.possible_issue_categories.map(cat => `â€¢ ${cat}`).join('\n')}
 
 5. DOCUMENT CHECKLIST:
-${roadmap.document_checklist.map(doc => `• ${doc.name}: ${doc.why_needed} (${doc.copy_or_original_note})`).join('\n')}
+${roadmap.document_checklist.map(doc => `â€¢ ${doc.name}: ${doc.why_needed} (${doc.copy_or_original_note})`).join('\n')}
 
 6. WHERE TO GO (OFFICIAL AUTHORITIES & SERVICES):
-${roadmap.where_to_go.map(dest => `• ${dest.name} (${dest.jurisdiction}): ${dest.reason} [${dest.url}]`).join('\n')}
+${roadmap.where_to_go.map(dest => `â€¢ ${dest.name} (${dest.jurisdiction}): ${dest.reason} [${dest.url}]`).join('\n')}
 
 7. QUESTIONS TO ASK:
-${roadmap.questions_to_ask.map(q => `• ${q}`).join('\n')}
+${roadmap.questions_to_ask.map(q => `â€¢ ${q}`).join('\n')}
 
 8. VERIFIED OFFICIAL SOURCES:
-${roadmap.sources.map(s => `• ${s.title} (${s.authority}): ${s.url}`).join('\n')}
+${roadmap.sources.map(s => `â€¢ ${s.title} (${s.authority}): ${s.url}`).join('\n')}
 
 LEGAL DISCLAIMER:
 ${roadmap.limitations.join('\n')}
@@ -99,7 +99,7 @@ ${roadmap.limitations.join('\n')}
       <div className="print-only-header">
         <h1>NyayaPath Legal Roadmap</h1>
         <p>Jurisdiction: {answers.state} {answers.district ? `(${answers.district})` : ''} | Generated: {new Date().toLocaleDateString('en-IN')}</p>
-        <p style={{ fontSize: '0.82rem', color: '#1e3a8a', fontWeight: 600 }}>This roadmap is based on the user’s answers{documentId ? ', uploaded document,' : ''} and approved official sources.</p>
+        <p style={{ fontSize: '0.82rem', color: '#1e3a8a', fontWeight: 600 }}>This roadmap is based on the userâ€™s answers{documentId ? ', uploaded document,' : ''} and approved official sources.</p>
         <p style={{ fontSize: '0.8rem', color: '#555' }}>General legal information only. Not a formal legal opinion or substitute for a certified advocate.</p>
       </div>
 
@@ -112,8 +112,8 @@ ${roadmap.limitations.join('\n')}
       </div>
 
       {/* Action Bar (Top) */}
-      <nav 
-        className="no-print" 
+      <nav
+        className="no-print"
         aria-label="Roadmap actions and tools"
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', background: '#ffffff', padding: '1rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1.5px solid var(--color-border)', boxShadow: var_shadow_sm }}
       >
@@ -124,9 +124,9 @@ ${roadmap.limitations.join('\n')}
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button 
-            type="button" 
-            className="btn btn-secondary btn-sm" 
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
             onClick={handleCopy}
             aria-label={copied ? "Roadmap copied to clipboard" : "Copy complete legal roadmap to clipboard"}
           >
@@ -139,9 +139,9 @@ ${roadmap.limitations.join('\n')}
             </span>
           )}
 
-          <button 
-            type="button" 
-            className="btn btn-secondary btn-sm" 
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
             onClick={handlePrint}
             aria-label="Print roadmap or save as PDF document"
           >
@@ -150,10 +150,10 @@ ${roadmap.limitations.join('\n')}
           </button>
 
           {documentId && !docDeleted && (
-            <button 
-              type="button" 
-              className="btn btn-secondary btn-sm" 
-              style={{ color: '#991b1b', borderColor: '#fca5a5' }} 
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              style={{ color: '#991b1b', borderColor: '#fca5a5' }}
               onClick={handleDelete}
               aria-label="Permanently delete uploaded document from server memory"
             >
@@ -167,9 +167,9 @@ ${roadmap.limitations.join('\n')}
             </span>
           )}
 
-          <button 
-            type="button" 
-            className="btn btn-outline-primary btn-sm" 
+          <button
+            type="button"
+            className="btn btn-outline-primary btn-sm"
             onClick={onReset}
             aria-label="Start over and reset current legal roadmap"
           >
@@ -180,8 +180,8 @@ ${roadmap.limitations.join('\n')}
       </nav>
 
       {/* Verified Grounding / Source Attribution Banner */}
-      <section 
-        className="source-grounding-banner no-print" 
+      <section
+        className="source-grounding-banner no-print"
         aria-label="Verified Source Grounding"
         style={{ background: '#f0f4ff', border: '1.5px solid #c7d2fe', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', marginBottom: '1.5rem' }}
       >
@@ -197,7 +197,7 @@ ${roadmap.limitations.join('\n')}
               )}
             </div>
             <p style={{ fontSize: '0.92rem', color: 'var(--color-text-main)', margin: '0.2rem 0 0 0', lineHeight: 1.5 }}>
-              This roadmap is based on the user’s answers{documentId ? ', uploaded document,' : ''} and approved official sources.
+              This roadmap is based on the userâ€™s answers{documentId ? ', uploaded document,' : ''} and approved official sources.
             </p>
           </div>
         </div>
@@ -237,7 +237,7 @@ ${roadmap.limitations.join('\n')}
               <ul style={{ listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {roadmap.possible_issue_categories.map((cat, idx) => (
                   <li key={idx} style={{ background: '#ffffff', padding: '0.25rem 0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', fontSize: '0.85rem', color: 'var(--color-secondary)' }}>
-                    • {cat}
+                    â€¢ {cat}
                   </li>
                 ))}
               </ul>
@@ -352,10 +352,10 @@ ${roadmap.limitations.join('\n')}
                   </div>
                 </div>
 
-                <a 
-                  href={auth.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={auth.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn btn-outline-primary btn-sm"
                   style={{ flexShrink: 0 }}
                   aria-label={`Visit official portal for ${auth.name} (opens in a new tab)`}
@@ -383,7 +383,7 @@ ${roadmap.limitations.join('\n')}
           <ul style={{ listStyle: 'none' }}>
             {roadmap.questions_to_ask.map((q, idx) => (
               <li key={idx} style={{ position: 'relative', paddingLeft: '1.4rem', marginBottom: '0.65rem', fontSize: '0.94rem' }}>
-                <span style={{ position: 'absolute', left: '0.2rem', color: 'var(--color-primary-light)', fontWeight: 'bold' }} aria-hidden="true">•</span>
+                <span style={{ position: 'absolute', left: '0.2rem', color: 'var(--color-primary-light)', fontWeight: 'bold' }} aria-hidden="true">â€¢</span>
                 {q}
               </li>
             ))}
@@ -397,8 +397,8 @@ ${roadmap.limitations.join('\n')}
               <FileText size={20} color="var(--color-secondary)" aria-hidden="true" />
               <span>7. Verified Official Sources & Limitations</span>
             </h2>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn btn-secondary btn-sm"
               onClick={onOpenSources}
               aria-label="View full directory of approved official Indian legal sources"
@@ -413,10 +413,10 @@ ${roadmap.limitations.join('\n')}
             </h3>
             {roadmap.sources.map((src, idx) => (
               <div key={idx} style={{ marginBottom: '0.6rem', fontSize: '0.9rem' }}>
-                <a 
-                  href={src.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
                   aria-label={`${src.title} from ${src.authority} (opens in a new tab)`}
                 >
@@ -424,7 +424,7 @@ ${roadmap.limitations.join('\n')}
                   <ExternalLink size={13} aria-hidden="true" />
                   <span className="sr-only"> (opens in a new tab)</span>
                 </a>
-                <span style={{ color: 'var(--color-text-muted)', marginLeft: '0.4rem' }}>— {src.authority}</span>
+                <span style={{ color: 'var(--color-text-muted)', marginLeft: '0.4rem' }}>â€” {src.authority}</span>
                 <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>{src.relevance}</div>
               </div>
             ))}

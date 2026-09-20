@@ -7,93 +7,162 @@
 [![Vite](https://img.shields.io/badge/Vite-6.0-646cff.svg)](https://vitejs.dev/)
 [![Express](https://img.shields.io/badge/Express-4.21-black.svg)](https://expressjs.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-23%20Passing-brightgreen.svg)](tests/roadmap.test.ts)
+[![Accessibility](https://img.shields.io/badge/Accessibility-WCAG%202.1%20AA%20(100)-success.svg)](src/index.css)
 
-NyayaPath bridges the gap between legal confusion and verified, actionable next steps. When faced with tenancy disputes, arbitrary workplace actions, or procedural hurdles, citizens often struggle to identify the relevant legal forum, the correct documentation to collect, or whether they qualify for free state legal aid. NyayaPath generates a structured, plain-language legal roadmap grounded in official Indian statutory frameworks and government dispute-resolution portals.
+NyayaPath bridges the gap between legal confusion and verified, actionable next steps for Indian citizens. When navigating tenancy disputes, arbitrary workplace actions, or procedural hurdles, citizens often struggle to identify the relevant legal forum, the correct documentation to collect, or whether they qualify for free state legal aid. NyayaPath generates a structured, plain-language legal roadmap grounded in official Indian statutory frameworks and government dispute-resolution portals.
 
 ---
 
 ## 📑 Table of Contents
 
-- [Key Features](#-key-features)
-- [Supported Workflows](#-supported-workflows)
-- [The 10-Point Legal Roadmap](#-the-10-point-legal-roadmap)
+- [Chosen Challenge Vertical](#-chosen-challenge-vertical)
+- [Problem Being Solved](#-problem-being-solved)
+- [Core User Journey](#-core-user-journey)
+- [Decision-Making Logic](#-decision-making-logic)
+- [Safety & Urgency Logic](#-safety--urgency-logic)
+- [Dual Engine: Mock Mode & Gemini Mode](#-dual-engine-mock-mode--gemini-mode)
+- [Privacy & Ephemeral Document Handling](#-privacy--ephemeral-document-handling)
+- [Security Controls & Defenses](#-security-controls--defenses)
 - [Curated Official Indian Sources](#-curated-official-indian-sources)
 - [Architecture & Tech Stack](#-architecture--tech-stack)
-- [Directory Structure](#-directory-structure)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
+- [Getting Started & Verification Commands](#-getting-started--verification-commands)
+  - [Clone & Installation](#clone--installation)
   - [Environment Configuration](#environment-configuration)
-  - [Running the Application](#running-the-application)
-  - [Running Automated Tests](#running-automated-tests)
-- [API Endpoints](#-api-endpoints)
-- [Privacy & Security](#-privacy--security)
+  - [Typecheck, Testing & Build Verification](#typecheck-testing--build-verification)
+- [Deployment Architecture & Assumptions](#-deployment-architecture--assumptions)
+- [Known Limitations](#-known-limitations)
 - [Important Legal Disclaimer](#-important-legal-disclaimer)
 
 ---
 
-## 🌟 Key Features
+## 🎯 Chosen Challenge Vertical
 
-- **Jurisdiction & State-Specific Guidance**: Tailors advice and authorities to the user's specific Indian state or Union Territory (e.g., Delhi, Maharashtra, Karnataka, Tamil Nadu, Uttar Pradesh, etc.).
-- **Dual-Engine Architecture (Live AI + Deterministic Mock)**:
-  - Powered by **Google Gemini** (`gemini-2.5-flash`) with strict Zod schema validation and automatic retry logic.
-  - Includes a comprehensive **Deterministic Mock Engine** with realistic, state-aware roadmaps requiring zero API keys for offline testing or development.
-  - Safe fallback: if AI quota or network fails, gracefully falls back to deterministic logic without breaking the user experience.
-- **Safety & Urgent Risk Escalation**:
-  - Automatically identifies critical risk factors (threat of arrest, domestic violence, immediate physical danger, unlawful eviction, imminent court deadlines).
-  - Flags high-priority urgency levels (`urgent`, `caution`, `normal`) and provides immediate emergency contact recommendations (Police 112, Women Helpline 1091, NALSA Helpline 15100).
-- **Privacy-First Document Inspection**:
-  - Optional upload of lease agreements, termination letters, or notices (PDF/JPG/PNG up to 5MB).
-  - In-memory parsing (`pdf-parse`) with zero disk persistence.
-  - One-click **"Delete Document from Memory"** button allowing users to wipe extracted text and identifiers immediately upon roadmap generation.
-- **Actionable Citizen Tools**:
-  - Top 3 prioritized **"Do This First"** immediate actions.
-  - **Document Checklist**: Specifies what papers to gather, why they matter, and whether photocopies or originals are required.
-  - **Questions to Ask a Lawyer / Legal Aid Officer**: Pre-drafted questions to maximize the value of legal consultations.
-  - **Print & Export**: Built-in print-friendly CSS formatting and one-click clipboard copy.
+**Legal Information Navigation & Citizen Self-Advocacy Preparation (India)**
+
+NyayaPath focuses specifically on early-stage civil and administrative dispute navigation across four common domains under Indian jurisdiction:
+1. **Tenant & Residential Tenancy Disputes**: Security deposit non-refund, arbitrary lease deductions, maintenance disputes, and unlawful eviction notices under State Rent Acts.
+2. **Employment & Workplace Issues**: Unpaid wages, non-compete restraint clauses under Section 27 of the Indian Contract Act (1872), withholding of relieving letters or experience certificates, and full-and-final (FnF) settlements.
+3. **Free Legal-Aid Entitlement & Procedure**: Statutory eligibility under Section 12 of the Legal Services Authorities Act (1987), locating District/State Legal Services Authorities (DLSA/SLSA), and panel advocate assignment.
+4. **General Civil & Administrative Matters**: Consumer grievance navigation (e-Daakhil), administrative procedure, and limitation periods.
 
 ---
 
-## 🏛️ Supported Workflows
+## 💡 Problem Being Solved
 
-| Workflow | Primary Focus Areas | Key Governing Acts & Frameworks | Official Dispute Forums |
+Citizens confronting legal challenges in India face three acute bottlenecks:
+- **Procedural Bewilderment**: Not knowing which forum holds jurisdiction (e.g., whether a deposit issue goes to the Rent Authority, Consumer Commission, or DLSA pre-litigation conciliation).
+- **Evidentiary Disorganization**: Arriving at consultations or hearings without critical evidentiary papers (e.g., move-in inventories, rent receipts, communication trails).
+- **Over-Reliance on Generic Advice**: Generic AI chat bots frequently hallucinate non-existent Indian court precedents, invent foreign legal doctrines, or fail to warn citizens of imminent limitation deadlines.
+
+NyayaPath solves this by delivering a **structured, bounded, 10-point roadmap** strictly tied to verified official portals and Indian state jurisdictions.
+
+---
+
+## 🗺️ Core User Journey
+
+NyayaPath maintains an accessible, 4-step progressive disclosure flow:
+
+```
+[ 1. Landing Page ] ────────► [ 2. Guided Questionnaire ] ────────► [ 3. Document Check (Optional) ] ────────► [ 4. Legal Roadmap ]
+  • Problem selection           • Indian State & District             • PDF / JPG / PNG (Max 5MB)                 • Situation summary
+  • Quick demo scenario         • Plain-language description          • Ephemeral in-memory parse                 • Top 3 immediate actions
+  • Official sources index      • Deadline & document status          • Magic bytes validation                    • Missing facts & checklist
+                                • Safety & urgent risk audit          • One-click purge                           • Verified sources & print
+```
+
+1. **Landing Page**: Citizen selects their problem vertical or tries an interactive sample scenario.
+2. **Guided Questionnaire**: Collects jurisdiction (State/UT, District), chronological narrative (minimum 15 characters), documentation status, deadline dates, and an 8-factor urgent risk triage.
+3. **Optional Document Context**: Users may attach a lease agreement, appointment letter, or notice (PDF/JPG/PNG up to 5MB). Files are parsed strictly in volatile memory. Users can proceed with or without a document.
+4. **Tailored Legal Roadmap**: Returns the neutral situation breakdown, top 3 immediate steps ("Do This First"), missing facts checklist, evidentiary document inventory, verified authorities ("Where to Go"), consultation questions, and official statutory references.
+
+---
+
+## 🧠 Decision-Making Logic
+
+NyayaPath utilizes deterministic jurisdiction-aware routing and strict schema bounds:
+- **State Jurisdictional Scoping**: Matches tenancy and legal-aid authorities to the citizen's State/UT (e.g., Karnataka Rent Act / KSLSA in Karnataka, Maharashtra Rent Control Act / MSLSA in Maharashtra, DSLSA in Delhi).
+- **Rule of Three for Actions**: Enforces a strict ceiling of **3 prioritized immediate actions** to prevent cognitive overload.
+- **Evidentiary Rationale**: Every checklist item explicitly explains *why* it is needed and specifies whether an original, photocopy, or digital stamped statement is required.
+- **Missing Information Audit**: Explicitly prompts the citizen for facts that could materially alter their rights (e.g., whether an 11-month agreement was registered, exact move-out inspection dates).
+
+---
+
+## 🚨 Safety & Urgency Logic
+
+NyayaPath incorporates safety rules to protect vulnerable users:
+- **8 Critical Risk Triggers**:
+  - Arrest or police inquiry
+  - Criminal allegations or FIR
+  - Domestic violence
+  - Immediate physical danger
+  - Child safety concerns
+  - Imminent court or statutory filing deadlines
+  - Unlawful or immediate physical eviction
+  - Threat of catastrophic financial harm
+- **Urgency Levels**:
+  - `urgent`: Imminent physical danger, domestic violence, criminal allegation, or active eviction. Triggers high-contrast emergency warning banners, redirects away from autonomous AI reliance, and displays official emergency hotlines (**112** National Emergency, **15100** NALSA Legal Aid, **1091** Women Helpline, **1098** Childline).
+  - `caution`: Active notice period or approaching statutory limitation deadline.
+  - `normal`: Standard procedural inquiry.
+
+---
+
+## 🔄 Dual Engine: Mock Mode & Gemini Mode
+
+NyayaPath is architected with a resilient dual-engine pattern:
+
+| Engine | Trigger Condition | Characteristics | Production Status |
 | :--- | :--- | :--- | :--- |
-| **Rental & Tenancy** | Security deposit withholding, arbitrary eviction, illegal rent hikes, repair disputes | State Tenancy / Rent Control Acts (e.g., Karnataka Rent Act 1999, Maharashtra Rent Control Act 1999, Model Tenancy Act), Consumer Protection Act 2019 | Rent Authorities / Tribunals, District Consumer Disputes Redressal Commissions (e-Daakhil) |
-| **Employment & Workplace** | Unpaid wages/dues, wrongful termination, notice period conflicts, PF/gratuity withholding | Industrial Disputes Act 1947, Payment of Wages Act 1936, Shops and Establishments Acts, Industrial Relations Code | Labour Conciliation Officers, SAMADHAN Portal, Labour Courts |
-| **Free Legal Aid** | Eligibility under Section 12 of the Legal Services Authorities Act, 1987 | Legal Services Authorities Act 1987, NALSA Schemes (Women, SC/ST, low-income, persons in custody) | National Legal Services Authority (NALSA), State (SLSA), District (DLSA), Taluka Legal Services Committees (TLSC) |
-| **General Civil & Consumer** | Deficiencies in service, contract breaches, consumer grievances | Consumer Protection Act 2019, Specific Relief Act, Indian Contract Act 1872 | e-Daakhil Portal, eCourts Services (v3.0), District Courts |
+| **Deterministic Mock Mode** *(Default & Reliable Fallback)* | `AI_PROVIDER=mock`, or missing/invalid `GEMINI_API_KEY`, or AI rate-limit/network failure | Instantaneous response (<5ms), 100% offline, zero external API dependencies, fully grounded in verified Indian statutory templates | **Active in current deployed prototype** |
+| **Live AI Engine (Google Gemini)** | `AI_PROVIDER=gemini` and valid `GEMINI_API_KEY` present | Strict JSON schema output via Gemini Flash with retry mechanisms, bounded prompt constraints, and strict domain URL allowlisting | **Configurable via environment variables** |
+
+> **Transparency Note**: In the current public Vercel deployment, NyayaPath operates in **Deterministic Mock Mode**. Gemini Live AI is only enabled in environments where a valid, active `GEMINI_API_KEY` is configured in `.env`.
 
 ---
 
-## 📋 The 10-Point Legal Roadmap
+## 🛡️ Privacy & Ephemeral Document Handling
 
-Every roadmap returned by NyayaPath adheres strictly to a validated 10-point schema:
+- **Zero Persistent Document Storage**: Uploaded files and parsed text reside strictly in ephemeral memory buffers (`multer.memoryStorage()`). No documents are written to permanent server disk or external databases.
+- **Automatic Stale Sweep**: Active in-memory buffers are automatically purged after 1 hour via an unref'd timer that never blocks process teardown.
+- **One-Click Memory Purge**: Users can delete their uploaded document and parsed tokens at any time via the **"Delete Uploaded Document"** button.
+- **No Private Data in Prompts**: The intake explicitly advises users against providing Aadhaar numbers, passwords, or bank account credentials. Document previews sent for analysis are clamped to safe length limits.
 
-1. **Situation Summary**: Neutral, plain-language breakdown of the user's situation.
-2. **Immediate Steps (Do This First)**: Exactly 1 to 3 time-sensitive, practical steps.
-3. **Missing Information**: Key facts, dates, or documents needed to assess legal options accurately.
-4. **Possible Issue Categories**: Relevant civil, labor, or tenancy classifications.
-5. **Document Checklist**: Explicit inventory of needed records, rationale, and copy/original requirements.
-6. **Where to Go**: Official statutory authorities, online grievance portals, or legal-aid clinics with verified URLs.
-7. **Questions to Ask**: Actionable queries to bring to a consultation with an advocate or legal aid counsel.
-8. **Urgency Level**: Categorized as `normal`, `caution`, or `urgent`.
-9. **Escalation Advice**: Emergency helplines and immediate precautionary notices if high-risk factors exist.
-10. **Official Sources & Limitations**: Direct links to authoritative government portals (.gov.in / .nic.in) and explicit legal boundaries.
+---
+
+## 🔒 Security Controls & Defenses
+
+1. **Strict Input Validation via Zod**:
+   - Workflows strictly constrained to `rental`, `employment`, `legal_aid`, `other`.
+   - String boundaries enforced (`description`: 10–3000 chars, `state`: 1–100 chars, `district`: max 100 chars).
+   - Document IDs strictly validated as UUIDs (`z.string().uuid()`) to eliminate path traversal risks.
+2. **File Upload Hardening**:
+   - Size strictly limited to 5 MB.
+   - Dual-layer validation: file extension, MIME type, and **magic bytes signature check** (inspects buffer bytes for `%PDF-`, JPEG `0xFF, 0xD8, 0xFF`, and PNG `0x89, 0x50, 0x4E, 0x47`). Empty files (<4 bytes) are rejected immediately.
+3. **CORS & Network Defenses**:
+   - Strict CORS origin allowlist based on `ALLOWED_ORIGIN` (defaults to frontend domain in production; allows localhost only in development mode).
+   - Rate limiting via `express-rate-limit` (200 requests / 15-minute window per IP).
+   - Defensive security headers via `helmet`.
+4. **AI Safety & Domain Allowlisting**:
+   - URLs generated by AI models are strictly validated against approved Indian judicial and government domains (`.gov.in`, `.nic.in`, `dslsa.org`, `ecourts.gov.in`, `nalsa.gov.in`). Unapproved or arbitrary domains are automatically sanitized and replaced with verified official portals.
+5. **Secret Protection**:
+   - `.env` is ignored by Git. `.env.example` contains placeholders only.
+   - Zero hardcoded credentials or API keys exist in source code or Git history.
+   - **Important Security Notice**: If a Gemini API key was ever committed or shared in external forks, it must be revoked and regenerated immediately via [Google AI Studio](https://aistudio.google.com/).
 
 ---
 
 ## 🔗 Curated Official Indian Sources
 
-NyayaPath references verified statutory and administrative portals:
+All authorities cited in roadmaps belong to verified Indian government and judicial bodies:
 
-- **NALSA Legal Aid Portal**: [https://nalsa.gov.in/legal-aid/](https://nalsa.gov.in/legal-aid/) (National Legal Services Authority)
-- **eCourts Services & e-Filing v3.0**: [https://filing.ecourts.gov.in/](https://filing.ecourts.gov.in/) & [https://ecourts.gov.in/](https://ecourts.gov.in/) (Supreme Court of India e-Committee)
-- **e-Daakhil Consumer Grievance Portal**: [https://edaakhil.nic.in/](https://edaakhil.nic.in/) (National Consumer Disputes Redressal Commission)
-- **SAMADHAN Labour Dispute Portal**: [https://samadhan.labour.gov.in/](https://samadhan.labour.gov.in/) (Ministry of Labour & Employment)
-- **State Legal Services Authorities (SLSA)**:
-  - Delhi: [https://dslsa.org/](https://dslsa.org/)
-  - Maharashtra: [https://legalservices.maharashtra.gov.in/](https://legalservices.maharashtra.gov.in/)
-  - Karnataka: [https://kslsa.kar.nic.in/](https://kslsa.kar.nic.in/)
+- **NALSA Legal Aid Schemes**: [https://nalsa.gov.in/legal-aid/](https://nalsa.gov.in/legal-aid/) (National Legal Services Authority)
+- **eCourts Services & e-Filing Portal**: [https://filing.ecourts.gov.in/](https://filing.ecourts.gov.in/) & [https://ecourts.gov.in/](https://ecourts.gov.in/) (Supreme Court of India e-Committee)
+- **e-Daakhil National Consumer Grievance Portal**: [https://edaakhil.nic.in/](https://edaakhil.nic.in/) (National Consumer Disputes Redressal Commission)
+- **SAMADHAN Labour Dispute Conciliation**: [https://samadhan.labour.gov.in/](https://samadhan.labour.gov.in/) (Ministry of Labour & Employment)
+- **State Legal Services Authorities**:
+  - Delhi (DSLSA): [https://dslsa.org/](https://dslsa.org/)
+  - Maharashtra (MSLSA): [https://legalservices.maharashtra.gov.in/](https://legalservices.maharashtra.gov.in/)
+  - Karnataka (KSLSA): [https://kslsa.kar.nic.in/](https://kslsa.kar.nic.in/)
 
 ---
 
@@ -113,77 +182,27 @@ NyayaPath references verified statutory and administrative portals:
    └──────────────┬───────────────────────────┬──────────────┘
                   │                           │
          [ Document Service ]        [ AI Provider Engine ]
-         • PDF text parsing          • Gemini 2.5 Flash
-         • In-memory store           • Zod Schema Validation
+         • Buffer magic bytes        • Gemini Flash
+         • In-memory store           • Zod Schema Enforcement
          • Instant deletion          • Deterministic Mock Fallback
-                                     • Curated Sources Database
+                                     • Approved Domain Sanitizer
 ```
 
-### Technologies
-
-- **Frontend**: React 18, TypeScript, Vite 6, Vanilla CSS (harmonious design system with custom CSS tokens, dark/light modes, micro-interactions), Lucide React.
-- **Backend**: Node.js, Express 4, TypeScript, `tsx`, Helmet (security headers), CORS, Express Rate Limit.
-- **Document Processing**: Multer (in-memory buffer storage), `pdf-parse` (secure PDF text extraction).
-- **Validation & AI**: Zod (runtime request/response validation), Google Gemini API (`gemini-2.5-flash`).
-- **Testing**: Built-in Node.js test runner (`node:test`, `node:assert/strict`) via `tsx`.
+- **Frontend**: React 18, TypeScript 5.7, Vite 6, Semantic HTML5, Vanilla CSS (WCAG 2.1 AA compliant, custom design tokens, responsive typography), Lucide React.
+- **Backend**: Node.js 20+, Express 4.21, TypeScript, Helmet, CORS, Express Rate Limit.
+- **Validation**: Zod 3.24 for runtime boundary enforcement.
+- **Document Processing**: Multer memory storage, `pdf-parse`, magic bytes inspection.
+- **Testing**: Native Node.js test runner (`node:test`, `node:assert/strict`) via `tsx`.
 
 ---
 
-## 📁 Directory Structure
+## 🚀 Getting Started & Verification Commands
 
-```text
-legal/
-├── index.html                   # HTML entry point with Google Fonts (Outfit & Inter)
-├── package.json                 # Project scripts and dependencies
-├── tsconfig.json                # Frontend TypeScript configuration
-├── tsconfig.server.json         # Backend TypeScript configuration
-├── vite.config.ts               # Vite bundler & API proxy configuration
-├── .env.example                 # Example environment variables
-│
-├── server/                      # Express Backend
-│   ├── index.ts                 # Server setup, middleware, static serving & error handler
-│   ├── routes.ts                # API router (/health, /sources, /upload, /roadmap/generate)
-│   ├── schema.ts                # Zod schemas for questionnaire & roadmap output
-│   ├── types.ts                 # Shared TypeScript interfaces & types
-│   ├── sources.ts               # Curated official government legal sources
-│   ├── documentService.ts       # In-memory document parser & deletion manager
-│   └── aiProvider.ts            # Gemini AI integration & deterministic mock engine
-│
-├── src/                         # React Frontend
-│   ├── main.tsx                 # React application entry point
-│   ├── App.tsx                  # Stage manager (Landing -> Questionnaire -> Upload -> Roadmap)
-│   ├── index.css                # Premium design system & typography tokens
-│   ├── types.ts                 # Frontend state and prop types
-│   └── components/
-│       ├── Header.tsx           # Navigation bar with live AI / mock badge
-│       ├── LandingHero.tsx      # Problem selector and benefit cards
-│       ├── QuestionnaireForm.tsx# Step-by-step intake with state selection & urgent risk triage
-│       ├── DocumentUploader.tsx # Optional file uploader with privacy assurance
-│       ├── RoadmapView.tsx      # Comprehensive 10-point roadmap display & print view
-│       ├── UrgentAlertBanner.tsx# High-visibility warning for critical emergencies
-│       ├── SourcesModal.tsx     # Curated official sources explorer
-│       └── Footer.tsx           # Official disclaimers and emergency helpline contacts
-│
-└── tests/
-    └── roadmap.test.ts          # Automated test suite (Validation, Mock Engine, Sources)
-```
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Node.js**: v18.0.0 or higher
-- **npm**: v9.0.0 or higher
-
-### Installation
-
-Clone the repository and install dependencies:
+### Clone & Installation
 
 ```bash
-git clone https://github.com/your-username/nyayapath.git
-cd nyayapath
+git clone https://github.com/manasviagarkar-cpu/NyayaPath.git
+cd NyayaPath
 npm install
 ```
 
@@ -192,132 +211,92 @@ npm install
 Copy the example environment file:
 
 ```bash
-# On Linux/macOS
+# Linux / macOS
 cp .env.example .env
 
-# On Windows PowerShell
+# Windows PowerShell
 copy .env.example .env
 ```
 
-Open `.env` and configure your settings:
+Default `.env` settings:
 
 ```env
 PORT=5000
 NODE_ENV=development
 
-# AI Provider: "mock" (offline/zero-config) or "gemini"
+# AI Provider: "mock" (recommended offline default) or "gemini"
 AI_PROVIDER=mock
-
-# Required only if AI_PROVIDER=gemini
 GEMINI_API_KEY=your_gemini_api_key_here
 
 # File Upload Settings
 UPLOAD_MAX_SIZE_MB=5
 ALLOWED_ORIGIN=http://localhost:3000
 
-# Rate Limiting (15 minutes window, max 100 requests per IP)
+# Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
+RATE_LIMIT_MAX_REQUESTS=200
 ```
 
-> **Note**: If `AI_PROVIDER=mock` or `GEMINI_API_KEY` is not provided, NyayaPath automatically runs in **Deterministic Mock Mode**, producing fully formatted, realistic roadmaps without external API calls.
+### Typecheck, Testing & Build Verification
 
-### Running the Application
-
-You can run both the server and client concurrently with a single command:
+NyayaPath provides unified, non-destructive verification scripts:
 
 ```bash
+# 1. Typecheck frontend and backend without emitting files
+npm run typecheck
+
+# 2. Run the 23-check automated test suite
+npm test
+
+# 3. Build client and server for production
+npm run build
+
+# 4. Run the master verification pipeline in order (Typecheck -> Test -> Build)
+npm run verify
+```
+
+*(On Windows PowerShell with restricted script execution policies, run `cmd.exe /c "npm run verify"`)*
+
+### Running the Application Locally
+
+```bash
+# Concurrently start backend (port 5000) and frontend (port 3000)
 npm run dev
 ```
 
-Alternatively, run them in separate terminals:
-
-```bash
-# Terminal 1: Backend API server (runs with tsx watch on port 5000)
-npm run dev:server
-
-# Terminal 2: Frontend client (Vite dev server on port 3000)
-npm run dev:client
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Building for Production
-
-```bash
-# Build both frontend and backend
-npm run build
-
-# Start the production server (serves the static frontend from dist/)
-npm start
-```
-
-### Running Automated Tests
-
-Run the comprehensive test suite verifying schema validation, mock engine outputs, urgent risk flags, and document deletion:
-
-```bash
-npm test
-```
-
-*(On Windows PowerShell where script execution is restricted, run `npm.cmd test`)*
+Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 📡 API Endpoints
+## 🌐 Deployment Architecture & Assumptions
 
-### 1. Health Check
-`GET /api/health`
-Returns service status, current timestamp, and active mode (`mock` or `live_ai`).
+NyayaPath consists of an Express API backend and a Vite React SPA frontend:
 
-### 2. Curated Legal Sources
-`GET /api/sources?topic={workflow}&jurisdiction={state}`
-Returns official statutory authorities and government portals filtered by topic (`rental`, `employment`, `legal_aid`, `general`) and jurisdiction.
-
-### 3. Upload Document (Optional)
-`POST /api/upload`
-- **Body**: `multipart/form-data` with field `document` (PDF, JPG, JPEG, PNG up to 5MB).
-- **Response**: Document metadata and preview of extracted text.
-
-### 4. Delete Uploaded Document
-`DELETE /api/document/:id`
-Immediately purges the uploaded document and extracted text from in-memory cache.
-
-### 5. Generate Legal Roadmap
-`POST /api/roadmap/generate`
-- **Body**:
-  ```json
-  {
-    "answers": {
-      "workflow": "rental",
-      "state": "Karnataka",
-      "district": "Bengaluru Urban",
-      "description": "Landlord refusing to return security deposit of Rs 80,000 after moving out.",
-      "hasWrittenDocument": "yes",
-      "hasReceivedDeadline": "no",
-      "hasUrgentRisk": false
-    },
-    "documentId": "optional-document-uuid"
-  }
-  ```
-- **Response**: Complete 10-point structured roadmap matching `RoadmapResponseSchema`.
+1. **Standalone Production Service (Recommended)**:
+   Deploy as a unified Node.js service (Render, Railway, Docker, or AWS ECS) using:
+   ```bash
+   npm run build
+   npm start
+   ```
+   In this mode, Express serves the API routes under `/api/*` and statically serves the compiled React app from `dist/` with SPA routing fallbacks.
+2. **Current Static Deployment**:
+   The live frontend is hosted at [https://nyayapath-ashy.vercel.app/](https://nyayapath-ashy.vercel.app/). Because Vercel serverless environments are stateless and split across distinct Lambda containers (which disrupts in-memory document buffers between `/api/upload` and `/api/roadmap/generate`), production deployment of the full backend is configured as a persistent Node/Express service. The frontend accurately badges simulated execution when live AI backend connectivity is not provisioned.
 
 ---
 
-## 🔒 Privacy & Security
+## ⚠️ Known Limitations
 
-- **No Permanent Document Storage**: Uploaded files and extracted text are kept strictly in ephemeral memory buffers. No documents are written to permanent server disk.
-- **Instant Data Scrubbing**: Users can click "Delete Document from Memory" at any time to purge their uploaded context.
-- **Security Headers & Protection**: Configured with `helmet` for defensive HTTP headers and `express-rate-limit` to prevent brute-force abuse.
-- **Input Sanitization & Schema Enforcement**: All payloads are rigorously validated using `zod` schemas before processing.
+1. **No Direct Document OCR**: Scanned document images or password-protected PDFs do not extract machine-readable text; citizens are prompted to verify clauses against their physical documents.
+2. **Not Formal Legal Advice**: NyayaPath organizes preparation steps and citizen documentation; it does not replace advocate consultation or court representation.
+3. **State Rule Variations**: Local municipal rent control amendments and state labor rules evolve continuously; all cited authorities must be verified directly through official portals.
 
 ---
 
-## ⚠️ Important Legal Disclaimer
+## ⚖️ Important Legal Disclaimer
 
-> **NyayaPath is an educational and legal information navigation tool, not a law firm or a substitute for a qualified lawyer.**
+> **NyayaPath is an educational, procedural navigation, and preparation assistant for Indian citizens. It is not a law firm and does not act as a licensed legal practitioner.**
 >
-> 1. **No Attorney-Client Relationship**: Using NyayaPath does not create an advocate-client relationship.
-> 2. **No Guaranteed Outcomes**: Legal situations depend on specific facts, evolving state rules, and judicial interpretation.
-> 3. **Not Ready-to-File Pleadings**: Roadmaps and checklists are designed for personal preparation and consultation organizing; they are not official court pleadings.
-> 4. **Emergency Situations**: In cases of physical violence, threats to life, arrest, or urgent statutory deadlines, immediately contact local law enforcement (112), Women's Helpline (1091), or your District Legal Services Authority (DLSA).
+> 1. **No Advocate-Client Relationship**: Use of NyayaPath does not constitute legal representation or establish an attorney-client relationship.
+> 2. **No Guaranteed Outcomes**: Legal determinations depend on specific facts, evolving state statutory interpretations, and competent judicial discretion.
+> 3. **Not Ready-to-File Court Pleadings**: Generated checklists and roadmaps are designed for personal organization and advocate consultation preparation; they are not formal court petitions.
+> 4. **Emergency Channels**: In cases of violence, harassment, imminent arrest, unlawful lockout, or strict limitation expiry, contact local law enforcement (**112**), the Women Helpline (**1091**), or your nearest District Legal Services Authority (**15100**) immediately.

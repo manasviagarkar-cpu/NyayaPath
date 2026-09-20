@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Briefcase, Scale, HelpCircle, ArrowRight, ShieldCheck, CheckCircle2, FileText, Compass } from 'lucide-react';
+import { Home, Briefcase, Scale, HelpCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 import { WorkflowCategory } from '../types.js';
 import { DemoExampleButton } from './DemoExampleButton.js';
 

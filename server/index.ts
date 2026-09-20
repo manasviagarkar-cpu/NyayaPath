@@ -24,15 +24,44 @@ app.use(
   })
 );
 
-// 2. CORS configuration
-const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
+// 2. CORS configuration with strict allowlist
+const rawAllowedOrigins = process.env.ALLOWED_ORIGIN
+  ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim()).filter(Boolean)
+  : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+const defaultProdOrigins = ['https://nyayapath-ashy.vercel.app'];
+
 app.use(
   cors({
-    origin: allowedOrigin === '*' ? true : allowedOrigin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, or same-origin)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // In development, allow localhost and 127.0.0.1 on any port
+      if (!isProd) {
+        if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+          return callback(null, true);
+        }
+      }
+
+      const allowedList = isProd
+        ? [...rawAllowedOrigins, ...defaultProdOrigins]
+        : [...rawAllowedOrigins, 'http://localhost:3000', 'http://127.0.0.1:3000'];
+
+      if (allowedList.includes(origin) || allowedList.includes('*')) {
+        return callback(null, true);
+      }
+
+      callback(new Error('CORS request blocked: Origin not authorized.'));
+    },
     methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false
   })
 );
+app.options('*', cors());
 
 // 3. Request rate limiting
 const limiter = rateLimit({
@@ -72,8 +101,8 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   const statusCode = err.status || 500;
   console.error(`[Server Error ${statusCode}]`, err.message || err);
   res.status(statusCode).json({
-    error: isProd 
-      ? 'An unexpected error occurred. Please try again later.' 
+    error: isProd
+      ? 'An unexpected error occurred. Please try again later.'
       : (err.message || 'Internal Server Error')
   });
 });

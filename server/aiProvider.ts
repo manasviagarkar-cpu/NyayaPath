@@ -345,9 +345,32 @@ export function isLiveAiConfigured(): boolean {
 }
 
 /**
+ * Checks if a given URL belongs to approved official Indian judicial / government domains
+ */
+export function isApprovedOfficialUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.protocol !== 'https:') return false;
+    const hostname = parsed.hostname.toLowerCase();
+    return (
+      hostname.endsWith('.gov.in') ||
+      hostname.endsWith('.nic.in') ||
+      hostname === 'dslsa.org' ||
+      hostname.endsWith('.dslsa.org') ||
+      hostname === 'ecourts.gov.in' ||
+      hostname.endsWith('.ecourts.gov.in') ||
+      hostname === 'nalsa.gov.in' ||
+      hostname.endsWith('.nalsa.gov.in')
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Strips markdown code blocks and normalizes JSON candidate output
  */
-function cleanJsonResponse(rawText: string): any {
+export function cleanJsonResponse(rawText: string): any {
   let cleaned = rawText.trim();
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
@@ -362,19 +385,33 @@ function cleanJsonResponse(rawText: string): any {
     parsed.immediate_steps = parsed.immediate_steps.slice(0, 3);
   }
 
-  // Ensure URLs are well-formed
+  // Ensure URLs are well-formed HTTPS and belong to approved domains
   if (Array.isArray(parsed.where_to_go)) {
-    parsed.where_to_go = parsed.where_to_go.map((item: any) => ({
-      ...item,
-      url: (item.url || '').trim().startsWith('http') ? item.url.trim() : `https://${(item.url || 'ecourts.gov.in').trim()}`
-    }));
+    parsed.where_to_go = parsed.where_to_go.map((item: any) => {
+      let rawUrl = (item.url || '').trim();
+      if (!rawUrl.startsWith('https://')) {
+        rawUrl = rawUrl.startsWith('http://') ? rawUrl.replace(/^http:\/\//, 'https://') : `https://${rawUrl || 'ecourts.gov.in'}`;
+      }
+      const safeUrl = isApprovedOfficialUrl(rawUrl) ? rawUrl : 'https://ecourts.gov.in/';
+      return {
+        ...item,
+        url: safeUrl
+      };
+    });
   }
 
   if (Array.isArray(parsed.sources)) {
-    parsed.sources = parsed.sources.map((item: any) => ({
-      ...item,
-      url: (item.url || '').trim().startsWith('http') ? item.url.trim() : `https://${(item.url || 'nalsa.gov.in').trim()}`
-    }));
+    parsed.sources = parsed.sources.map((item: any) => {
+      let rawUrl = (item.url || '').trim();
+      if (!rawUrl.startsWith('https://')) {
+        rawUrl = rawUrl.startsWith('http://') ? rawUrl.replace(/^http:\/\//, 'https://') : `https://${rawUrl || 'nalsa.gov.in'}`;
+      }
+      const safeUrl = isApprovedOfficialUrl(rawUrl) ? rawUrl : 'https://nalsa.gov.in/legal-aid/';
+      return {
+        ...item,
+        url: safeUrl
+      };
+    });
   }
 
   return parsed;

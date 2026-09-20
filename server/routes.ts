@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import { QuestionnaireAnswersSchema } from './schema.js';
+import { GenerateRoadmapRequestSchema, DocumentIdParamSchema } from './schema.js';
 import { CURATED_LEGAL_SOURCES, getSourcesForWorkflow } from './sources.js';
 import { processUploadedFile, getDocumentText, deleteDocument } from './documentService.js';
 import { generateLegalRoadmap, generateMockRoadmap, isLiveAiConfigured } from './aiProvider.js';
@@ -47,8 +47,8 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
 
 // 2. Curated official sources
 apiRouter.get('/sources', (req: Request, res: Response) => {
-  const topic = req.query.topic as string | undefined;
-  const jurisdiction = req.query.jurisdiction as string | undefined;
+  const topic = typeof req.query.topic === 'string' ? req.query.topic.slice(0, 50) : undefined;
+  const jurisdiction = typeof req.query.jurisdiction === 'string' ? req.query.jurisdiction.slice(0, 100) : undefined;
 
   if (topic) {
     const filtered = getSourcesForWorkflow(topic, jurisdiction);
@@ -92,10 +92,16 @@ apiRouter.post('/upload', (req: Request, res: Response): void => {
 
 // 4. Document deletion
 apiRouter.delete('/document/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
+  const paramValidation = DocumentIdParamSchema.safeParse(req.params);
+  if (!paramValidation.success) {
+    res.status(400).json({ error: 'Invalid document ID format. Must be a valid UUID.' });
+    return;
+  }
+
+  const { id } = paramValidation.data;
   const deleted = deleteDocument(id);
   if (deleted) {
-    res.json({ success: true, message: 'Document removed permanently from memory and server store.' });
+    res.json({ success: true, message: 'Document removed from server memory.' });
   } else {
     res.status(404).json({ error: 'Document not found or already deleted.' });
   }
@@ -104,24 +110,16 @@ apiRouter.delete('/document/:id', (req: Request, res: Response) => {
 // 5. Roadmap generation
 apiRouter.post('/roadmap/generate', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { answers, documentId } = req.body;
-
-    if (!answers) {
-      res.status(400).json({ error: 'Missing questionnaire answers in request body' });
-      return;
-    }
-
-    // Validate questionnaire input with lenient schema
-    const validationResult = QuestionnaireAnswersSchema.safeParse(answers);
-    if (!validationResult.success) {
+    const parsedBody = GenerateRoadmapRequestSchema.safeParse(req.body);
+    if (!parsedBody.success) {
       res.status(400).json({
-        error: 'Invalid questionnaire input',
-        details: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        error: 'Invalid request payload',
+        details: parsedBody.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
       });
       return;
     }
 
-    const validatedAnswers = validationResult.data;
+    const { answers: validatedAnswers, documentId } = parsedBody.data;
 
     // Fetch relevant sources
     const relevantSources = getSourcesForWorkflow(validatedAnswers.workflow, validatedAnswers.state);

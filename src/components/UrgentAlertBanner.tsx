@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertOctagon, PhoneCall, ShieldAlert } from 'lucide-react';
+import { AlertOctagon, PhoneCall } from 'lucide-react';
 
 interface UrgentAlertBannerProps {
   customMessage?: string;

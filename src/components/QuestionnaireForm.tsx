@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, AlertTriangle, ShieldCheck, MapPin, Calendar, FileQuestion, Clock, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AlertTriangle, MapPin, Calendar, FileQuestion, Clock, Sparkles } from 'lucide-react';
 import { QuestionnaireAnswers, WorkflowCategory, UrgentRiskFactors } from '../types.js';
 import { UrgentAlertBanner } from './UrgentAlertBanner.js';
 
