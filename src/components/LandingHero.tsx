@@ -49,12 +49,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
         </div>
 
         <div style={{ marginTop: '-0.3rem', marginBottom: '1.25rem', fontSize: '0.88rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
-          <span>Demo scenario:</span>
+          <span>Try a sample case:</span>
           <button 
             type="button" 
             onClick={onSelectExample}
             style={{ background: 'none', border: 'none', color: 'var(--color-primary-light)', textDecoration: 'underline', cursor: 'pointer', fontWeight: 600, fontSize: 'inherit', padding: 0 }}
-            aria-label="Load demo scenario: My landlord is withholding my security deposit after I moved out."
+            aria-label="Load Try a sample case: My landlord is withholding my security deposit after I moved out."
           >
             “My landlord is withholding my security deposit after I moved out.”
           </button>

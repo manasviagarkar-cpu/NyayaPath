@@ -1,0 +1,1 @@
+const r = await fetch('https://api.groq.com/openai/v1/models', {headers: {Authorization: 'Bearer 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'}}); const d = await r.json(); console.log(JSON.stringify(d.data?.map(m = 

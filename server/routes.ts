@@ -40,7 +40,7 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
     service: 'NyayaPath API',
     mode: liveAi ? 'live_ai' : 'mock',
     description: liveAi
-      ? 'Live AI roadmap generation connected via Google Gemini'
+      ? 'Live AI roadmap generation connected via Groq (Qwen)'
       : 'Interactive prototype with simulated roadmap generation.'
   });
 });

@@ -1,0 +1,1 @@
+import('./server/aiProvider.js').then(async()= r=await fetch('https://api.groq.com/openai/v1/models',{headers:{Authorization:'Bearer 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'}});const d=await r.json();d.data?.forEach(m=>console.log(m.id));}).catch(console.error);  

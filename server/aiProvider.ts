@@ -335,10 +335,10 @@ export function generateMockRoadmap(
 }
 
 /**
- * Check if Live AI is configured and enabled
+ * Check if Live AI (Groq) is configured and enabled
  */
 export function isLiveAiConfigured(): boolean {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   const provider = process.env.AI_PROVIDER || 'mock';
   const forceMock = process.env.MOCK_MODE === 'true' || provider === 'mock' || !apiKey || apiKey.trim().length < 10;
   return !forceMock;
@@ -418,14 +418,14 @@ export function cleanJsonResponse(rawText: string): any {
 }
 
 /**
- * AI Provider abstraction using Gemini API with retry and fallback
+ * AI Provider abstraction using Groq API (OpenAI-compatible) with retry and fallback
  */
 export async function generateLegalRoadmap(
   input: QuestionnaireAnswers,
   sources: LegalSource[],
   documentText?: string | null
 ): Promise<RoadmapResponse> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!isLiveAiConfigured()) {
     return generateMockRoadmap(input, sources, documentText);
@@ -458,64 +458,122 @@ Generate the structured JSON roadmap following all safety rules. Remember:
 - Use only approved source URLs for where_to_go and sources.
 - If urgent risks are flagged, set urgency_level="urgent".
 - Do not invent cases, statutes, fees, addresses, or phone numbers.
+- Respond ONLY with the raw JSON object, no markdown, no code fences.
 `;
 
-  // Helper to call Gemini API with valid models (gemini-2.0-flash / gemini-1.5-flash)
-  async function callGemini(retryInstruction?: string, modelName: string = process.env.GEMINI_MODEL || 'gemini-1.5-flash'): Promise<string> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-    
+  // Helper to call Groq API (OpenAI-compatible chat completions endpoint)
+  async function callGroq(retryInstruction?: string, modelName: string = process.env.GROQ_MODEL || 'qwen/qwen3.8-27b'): Promise<string> {
+    const url = 'https://api.groq.com/openai/v1/chat/completions';
+
+    const systemMsg = retryInstruction
+      ? `${SYSTEM_INSTRUCTION}\n\nCorrection instruction: ${retryInstruction}`
+      : SYSTEM_INSTRUCTION;
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: `${SYSTEM_INSTRUCTION}\n\n${userPrompt}${retryInstruction ? `\n\nCorrection instruction: ${retryInstruction}` : ''}` }
-            ]
-          }
+        model: modelName,
+        messages: [
+          { role: 'system', content: systemMsg },
+          { role: 'user', content: userPrompt }
         ],
-        generationConfig: {
-          temperature: 0.2,
-          responseMimeType: 'application/json'
-        }
+        temperature: 0.2,
+        max_tokens: 4096,
+        response_format: { type: 'json_object' }
       })
     });
 
-    if (!response.status || response.status < 200 || response.status >= 300) {
+    if (!response.ok) {
       const errText = await response.text();
-      // If 2.0-flash fails with 404, attempt fallback to 1.5-flash
-      if (response.status === 404 && modelName !== 'gemini-1.5-flash') {
-        console.warn(`Model ${modelName} returned 404, attempting fallback to gemini-1.5-flash`);
-        return callGemini(retryInstruction, 'gemini-1.5-flash');
+      // If model not found, try fallback model
+      if (response.status === 404 && modelName !== 'openai/gpt-oss-20b') {
+        console.warn(`Model ${modelName} returned 404, falling back to openai/gpt-oss-20b`);
+        return callGroq(retryInstruction, 'openai/gpt-oss-20b');
       }
-      throw new Error(`AI Provider API responded with status ${response.status}: ${errText.slice(0, 200)}`);
+      throw new Error(`Groq API responded with status ${response.status}: ${errText.slice(0, 300)}`);
     }
 
     const jsonResponse: any = await response.json();
-    const candidateText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+    const candidateText = jsonResponse.choices?.[0]?.message?.content;
     if (!candidateText) {
-      throw new Error('Empty response from AI Provider API');
+      throw new Error('Empty response from Groq API');
     }
     return candidateText;
   }
 
+  // Enrich AI response with curated sources if arrays are missing or empty
+  function enrichWithCuratedSources(parsed: any): any {
+    const fallbackSources = (sources.length > 0 ? sources : CURATED_LEGAL_SOURCES).slice(0, 3);
+
+    if (!Array.isArray(parsed.where_to_go) || parsed.where_to_go.length === 0) {
+      parsed.where_to_go = fallbackSources.map(s => ({
+        name: s.title,
+        reason: s.relevance,
+        url: s.url,
+        jurisdiction: s.jurisdiction || 'National (India)',
+        access_mode: 'Online & In-person' as const
+      }));
+    }
+
+    if (!Array.isArray(parsed.sources) || parsed.sources.length === 0) {
+      parsed.sources = fallbackSources.map(s => ({
+        title: s.title,
+        url: s.url,
+        authority: s.authority,
+        relevance: s.relevance
+      }));
+    }
+
+    if (!Array.isArray(parsed.limitations) || parsed.limitations.length === 0) {
+      parsed.limitations = [
+        'NyayaPath provides general legal information only. It is not a lawyer and does not give legal advice.',
+        'Verify all information with a qualified advocate or official authority.'
+      ];
+    }
+
+    if (!Array.isArray(parsed.document_checklist) || parsed.document_checklist.length === 0) {
+      parsed.document_checklist = [{
+        name: 'Key Documents Related to Your Issue',
+        why_needed: 'To establish facts and support your position.',
+        copy_or_original_note: 'Keep originals safe; share certified copies.'
+      }];
+    }
+
+    if (!Array.isArray(parsed.questions_to_ask) || parsed.questions_to_ask.length === 0) {
+      parsed.questions_to_ask = ['What are my legal options given the specific facts of my situation?'];
+    }
+
+    if (!Array.isArray(parsed.missing_information)) {
+      parsed.missing_information = [];
+    }
+
+    if (!Array.isArray(parsed.possible_issue_categories)) {
+      parsed.possible_issue_categories = [];
+    }
+
+    return parsed;
+  }
+
   try {
-    const textOutput = await callGemini();
-    const cleaned = cleanJsonResponse(textOutput);
+    const textOutput = await callGroq();
+    const cleaned = enrichWithCuratedSources(cleanJsonResponse(textOutput));
     const validated = RoadmapResponseSchema.parse(cleaned);
     return validated;
   } catch (firstErr: any) {
+    console.warn('Groq first attempt failed:', firstErr.message);
     // Retry once with correction instruction
     try {
-      const retryText = await callGemini('Your previous response did not match the strict JSON schema. Ensure immediate_steps has at most 3 items and all required fields are present.');
-      const cleanedRetry = cleanJsonResponse(retryText);
+      const retryText = await callGroq('Your previous response did not match the strict JSON schema. Ensure immediate_steps has at most 3 items and all required fields are present. Respond ONLY with raw JSON, no code fences.');
+      const cleanedRetry = enrichWithCuratedSources(cleanJsonResponse(retryText));
       const validatedRetry = RoadmapResponseSchema.parse(cleanedRetry);
       return validatedRetry;
     } catch (secondErr: any) {
       // Graceful fallback to verified deterministic mock rather than showing broken UI
-      console.warn('AI Provider failed schema validation or network check. Falling back safely to verified roadmap mock:', secondErr.message);
+      console.warn('Groq API failed schema validation or network. Falling back safely to verified roadmap mock:', secondErr.message);
       return generateMockRoadmap(input, sources, documentText);
     }
   }
